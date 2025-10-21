@@ -9,6 +9,7 @@ import io
 import hashlib
 from typing import List, Dict, Optional
 import logging
+import numpy as np
 
 
 logging.basicConfig(level=logging.INFO)
@@ -122,7 +123,14 @@ class ProductEmbeddingPipeline:
             # Use CLS token embedding
             embedding = outputs.last_hidden_state[:, 0].cpu().numpy()[0]
             
-        return embedding.tolist()
+        norm = np.linalg.norm(embedding)
+        if norm == 0: 
+            # Handle the rare case of a zero vector
+            return [0.0] * len(embedding)
+       
+        normalized_embedding = embedding / norm    
+            
+        return normalized_embedding.tolist()
     
     def generate_unique_id(self, product_id: str, img_url: str) -> str:
         """Generate unique ID for each image embedding"""

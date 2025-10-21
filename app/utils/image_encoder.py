@@ -49,27 +49,22 @@ class DinoEmbeddingModel:
 
         # Ensure the image is in RGB format, as expected by most vision models
         image = image.convert("RGB")
-
-        # 1. Preprocess the image
-        inputs = self.processor(images=image, return_tensors="pt").to(self.device)
-
-        # 2. Generate embedding with no gradient calculation for efficiency
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            # 'pooler_output' contains the [CLS] token's representation,
-            # which serves as the embedding for the entire image.
-            image_features = outputs.pooler_output
-
-        # 3. Normalize the embedding and convert to a standard Python list
-        embedding = image_features.cpu().numpy().flatten()
-        norm = np.linalg.norm(embedding)
         
-        if norm == 0:
-            # Handle the edge case of a zero vector
-            return [0.0] * len(embedding)
+        with torch.no_grad():
+            inputs = self.processor(images=image, return_tensors="pt").to(self.device)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
             
+            outputs = self.model(**inputs)
+            embedding = outputs.last_hidden_state[:, 0].cpu().numpy()[0]
+        
+        norm = np.linalg.norm(embedding)
+        if norm == 0: 
+            # Handle the rare case of a zero vector
+            return [0.0] * len(embedding)    
+
         normalized_embedding = embedding / norm
         return normalized_embedding.tolist()
+        
 
 
 encoder = DinoEmbeddingModel()

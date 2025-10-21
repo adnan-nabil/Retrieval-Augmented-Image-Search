@@ -17,7 +17,7 @@ class DBOperations:
         self.client = QdrantClient(url=self.url)
         self.collection_name = settings.QDRANT_COLLECTION_NAME
         self.vector_dimension = settings.VECTOR_DIMENSION
-        self.k = 100 # how many similar points I want
+        self.k = 30 # how many similar points I want
         
 
     def find_similar(self, image: Image.Image, text_query: Optional[str]) -> List[models.ScoredPoint]:
