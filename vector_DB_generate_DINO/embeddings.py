@@ -7,21 +7,21 @@ if __name__ == "__main__":
     
     mysql_config = {
         'host': 'localhost',
-        'port': 3306,
+        'port': 3307,
         'user': 'root',
         'password': '',
-        'database': 'shamim_db'
+        'database': 'gadget_bodda'
     }
     
     
     pipeline = ProductEmbeddingPipeline(
         mysql_config=mysql_config,
         qdrant_url="http://localhost:6333",
-        collection_name="gadget_bodda_dino"  # Ensure this matches your MySQL database name
+        collection_name="gadget_bodda"  
     )
     
     
-    pipeline.run_pipeline(batch_size=50)
+    pipeline.run_pipeline(batch_size=200)
     
     # Or process limited number for testing
     # pipeline.run_pipeline(batch_size=10, total_products=100)

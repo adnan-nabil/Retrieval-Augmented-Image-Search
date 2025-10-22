@@ -10,6 +10,7 @@ import hashlib
 from typing import List, Dict, Optional
 import logging
 import numpy as np
+import json
 
 
 logging.basicConfig(level=logging.INFO)
@@ -72,7 +73,8 @@ class ProductEmbeddingPipeline:
             image_path, 
             image_path1, 
             image_path2, 
-            image_path3
+            image_path3,
+            image_paths
         FROM products
         WHERE user_id = 188
         LIMIT %s OFFSET %s
@@ -127,7 +129,7 @@ class ProductEmbeddingPipeline:
         if norm == 0: 
             # Handle the rare case of a zero vector
             return [0.0] * len(embedding)
-       
+        
         normalized_embedding = embedding / norm    
             
         return normalized_embedding.tolist()
@@ -137,28 +139,63 @@ class ProductEmbeddingPipeline:
         combined = f"{product_id}_{img_url}"
         return hashlib.md5(combined.encode()).hexdigest()
     
-    def process_and_store_product(self, product: Dict):
+    # --- METHOD CHANGED ---
+    # Renamed from 'process_and_store_product'
+    # Now returns a list of points instead of uploading
+    def process_product(self, product: Dict) -> List[PointStruct]:
         """
-        Process a single product: download images, generate embeddings, store in Qdrant
+        Process a single product: download images, generate embeddings.
+        Returns a list of PointStructs for Qdrant.
         
         Args:
             product: Dictionary containing product data from MySQL
         """
         product_id = str(product['id'])
-        product_name = product['name'].lower().strip()
+        # Use .get() for safety in case 'name' is missing
+        product_name = product.get('name', 'no_name').lower().strip()
         
-        # Get all image paths (img_path1, img_path2, img_path3, etc.)
-        image_columns = [col for col in product.keys() if col.startswith('image_path')]
+        # --- NEW: URL Deduplication Logic ---
         
+        all_urls = []
+        
+        # 1. Get URLs from all single-image columns
+        single_image_columns = [
+            'image_path', 'image_path1', 'image_path2', 'image_path3'
+        ]
+        for col in single_image_columns:
+            if col in product:
+                all_urls.append(product[col])
+
+        # 2. Get URLs from the 'image_paths' JSON column
+        json_paths_str = product.get('image_paths')
+        
+        if json_paths_str:
+            try:
+                # Try to parse the string as JSON
+                parsed_paths = json.loads(json_paths_str)
+                if isinstance(parsed_paths, list):
+                    all_urls.extend(parsed_paths)
+                    
+                elif isinstance(parsed_paths, str):
+                    all_urls.append(parsed_paths)
+                    
+            except (json.JSONDecodeError, TypeError):
+                if isinstance(json_paths_str, str):
+                    all_urls.append(json_paths_str)
+
+        unique_urls = {
+            url.strip() for url in all_urls if url and url.strip()
+        }
+        
+        # --- End of URL Logic ---
+
         points = []
         
-        for img_col in image_columns:
-            img_url = product.get(img_col)
+        # 4. Loop over the final, unique URLs
+        for img_url in unique_urls:
             
-            if not img_url or img_url.strip() == '':
-                continue
-            
-            logger.info(f"Processing {product_name} - {img_col}: {img_url}")
+            # This log is now cleaner
+            logger.info(f"Processing {product_name} (ID: {product_id}) - URL: {img_url}")
             
             # Download image to memory
             image = self.download_image_to_memory(img_url)
@@ -172,15 +209,15 @@ class ProductEmbeddingPipeline:
                 logger.error(f"Failed to generate embedding for {img_url}: {e}")
                 continue
             
-            # Create payload with all relevant metadata
+            # --- UPDATED Payload ---
+            # 'image_column' is removed, as it's no longer relevant
             payload = {
                 'product_id': product_id,
                 'product_name': product_name,
                 'image_url': img_url,
-                'image_column': img_col
             }
             
-            # Generate unique point ID
+            # Generate unique point ID (still safe to do)
             point_id = self.generate_unique_id(product_id, img_url)
             
             # Create point
@@ -191,20 +228,16 @@ class ProductEmbeddingPipeline:
             )
             points.append(point)
         
-        # Batch upload points to Qdrant
-        if points:
-            self.qdrant_client.upsert(
-                collection_name=self.collection_name,
-                points=points
-            )
-            logger.info(f"Stored {len(points)} embeddings for product {product_id}")
-    
+        return points
+
+    # --- METHOD CHANGED ---
+    # Updated to collect points and perform batch upserts
     def run_pipeline(self, batch_size: int = 50, total_products: Optional[int] = None):
         """
         Run the complete pipeline
         
         Args:
-            batch_size: Number of products to process per batch
+            batch_size: Number of products to fetch from MySQL at once
             total_products: Total number of products to process (None = all)
         """
         # Create collection
@@ -218,24 +251,52 @@ class ProductEmbeddingPipeline:
             products = self.fetch_products_from_mysql(batch_size, offset)
             
             if not products:
+                logger.info("No more products to fetch from MySQL.")
                 break
+            
+            # --- NEW ---
+            # List to hold all points for this MySQL batch
+            points_batch = [] 
             
             # Process each product
             for product in products:
                 try:
-                    self.process_and_store_product(product)
+                    # --- CHANGED ---
+                    # Call the renamed method and get the list of points
+                    product_points = self.process_product(product)
+                    
+                    if product_points:
+                        # --- NEW ---
+                        # Add the generated points to the batch list
+                        points_batch.extend(product_points)
+                        
                     processed += 1
                     
                     if total_products and processed >= total_products:
                         logger.info(f"Reached limit of {total_products} products")
-                        return
+                        break # Break inner loop
                         
                 except Exception as e:
                     logger.error(f"Error processing product {product.get('id')}: {e}")
                     continue
             
+            # --- NEW ---
+            # After processing all products in the MySQL batch,
+            # upload all collected points to Qdrant in a single call.
+            if points_batch:
+                self.qdrant_client.upsert(
+                    collection_name=self.collection_name,
+                    points=points_batch
+                )
+                logger.info(f"Stored {len(points_batch)} embeddings in Qdrant for this batch")
+            
+            # Check again in case the inner loop was broken
+            if total_products and processed >= total_products:
+                break # Break outer loop
+                
             offset += batch_size
             logger.info(f"Processed {processed} products so far...")
         
         logger.info(f"Pipeline complete! Processed {processed} products")
-
+        
+        
