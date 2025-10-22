@@ -139,9 +139,7 @@ class ProductEmbeddingPipeline:
         combined = f"{product_id}_{img_url}"
         return hashlib.md5(combined.encode()).hexdigest()
     
-    # --- METHOD CHANGED ---
-    # Renamed from 'process_and_store_product'
-    # Now returns a list of points instead of uploading
+  
     def process_product(self, product: Dict) -> List[PointStruct]:
         """
         Process a single product: download images, generate embeddings.
@@ -151,10 +149,8 @@ class ProductEmbeddingPipeline:
             product: Dictionary containing product data from MySQL
         """
         product_id = str(product['id'])
-        # Use .get() for safety in case 'name' is missing
+       
         product_name = product.get('name', 'no_name').lower().strip()
-        
-        # --- NEW: URL Deduplication Logic ---
         
         all_urls = []
         
@@ -187,11 +183,9 @@ class ProductEmbeddingPipeline:
             url.strip() for url in all_urls if url and url.strip()
         }
         
-        # --- End of URL Logic ---
 
         points = []
         
-        # 4. Loop over the final, unique URLs
         for img_url in unique_urls:
             
             # This log is now cleaner
@@ -209,8 +203,8 @@ class ProductEmbeddingPipeline:
                 logger.error(f"Failed to generate embedding for {img_url}: {e}")
                 continue
             
-            # --- UPDATED Payload ---
-            # 'image_column' is removed, as it's no longer relevant
+            # ---Payload ---
+            
             payload = {
                 'product_id': product_id,
                 'product_name': product_name,
@@ -230,8 +224,7 @@ class ProductEmbeddingPipeline:
         
         return points
 
-    # --- METHOD CHANGED ---
-    # Updated to collect points and perform batch upserts
+   
     def run_pipeline(self, batch_size: int = 50, total_products: Optional[int] = None):
         """
         Run the complete pipeline
