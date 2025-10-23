@@ -225,7 +225,7 @@ class ProductEmbeddingPipeline:
         return points
 
    
-    def run_pipeline(self, batch_size: int = 50, total_products: Optional[int] = None):
+    def run_pipeline(self, batch_size: int = 100, total_products: Optional[int] = None):
         """
         Run the complete pipeline
         
@@ -240,26 +240,23 @@ class ProductEmbeddingPipeline:
         processed = 0
         
         while True:
-            # Fetch batch of products
+            # Fetch a batch of products
             products = self.fetch_products_from_mysql(batch_size, offset)
             
             if not products:
                 logger.info("No more products to fetch from MySQL.")
                 break
             
-            # --- NEW ---
             # List to hold all points for this MySQL batch
             points_batch = [] 
             
             # Process each product
             for product in products:
                 try:
-                    # --- CHANGED ---
                     # Call the renamed method and get the list of points
                     product_points = self.process_product(product)
                     
                     if product_points:
-                        # --- NEW ---
                         # Add the generated points to the batch list
                         points_batch.extend(product_points)
                         
@@ -273,7 +270,7 @@ class ProductEmbeddingPipeline:
                     logger.error(f"Error processing product {product.get('id')}: {e}")
                     continue
             
-            # --- NEW ---
+            
             # After processing all products in the MySQL batch,
             # upload all collected points to Qdrant in a single call.
             if points_batch:
@@ -292,4 +289,22 @@ class ProductEmbeddingPipeline:
         
         logger.info(f"Pipeline complete! Processed {processed} products")
         
-        
+if __name__ == "__main__":
+    
+    mysql_config = {
+        'host': 'localhost',
+        'port': 3307,
+        'user': 'root',
+        'password': '',
+        'database': 'gadget_bodda'
+    }
+    
+    
+    pipeline = ProductEmbeddingPipeline(
+        mysql_config=mysql_config,
+        qdrant_url="http://localhost:6333",
+        collection_name="gadget_bodda"  
+    )
+    
+    
+    pipeline.run_pipeline(batch_size=200)        
