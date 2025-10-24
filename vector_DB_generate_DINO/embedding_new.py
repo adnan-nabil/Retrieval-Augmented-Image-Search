@@ -78,7 +78,7 @@ class ProductEmbeddingPipeline:
         Asynchronously download a single image and verify it.
         """
         try:
-            async with session.get(url, timeout=10) as response:
+            async with session.get(url, timeout=50) as response:
                 response.raise_for_status() 
 
                 content_type = response.headers.get('Content-Type')
@@ -217,7 +217,6 @@ class ProductEmbeddingPipeline:
             logger.error(f"Failed to generate embeddings for batch: {e}", exc_info=True)
             return []
 
-        # --- STEP 4: Create Points (Synchronous and fast) ---
         logger.info(f"Creating {len(embeddings)} PointStructs...")
         points_batch = [
             PointStruct(
