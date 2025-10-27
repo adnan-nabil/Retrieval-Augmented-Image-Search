@@ -189,7 +189,7 @@ class ProductEmbeddingPipeline:
             logger.info("No valid, unique images found in this batch.")
             return []
             
-        # --- STEP 2: Asynchronously download all images in parallel ---
+        
         logger.info(f"Downloading {len(urls_to_download)} images concurrently...")
         images_to_process = []       # Stores PIL.Image objects
         metadata_for_images = []   # Stores corresponding info
