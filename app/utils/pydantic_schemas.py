@@ -42,7 +42,8 @@ class SearchResult(BaseModel):
     product_name: str = Field(..., description="product_name")
     product_id: str = Field(..., description="product_id.")
     url: Optional[str] = Field(None, description="url of image in original db.")
-    similarity: float = Field(..., description="The cosine similarity score (closer to 1.0 is more similar).")
+    image_similarity: float = Field(..., description="Image search score from Qdrant.")
+    rerank_score: Optional[float] = Field(None, description="Brand name relevance score.")
 
 class SearchResponse(BaseModel):
     """The final response structure for any search endpoint."""

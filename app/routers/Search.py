@@ -45,7 +45,9 @@ async def search_by_image_upload(
                 product_name=hit.payload.get('product_name'),
                 product_id=hit.payload.get('product_id'),
                 url=hit.payload.get('image_url'),
-                similarity=hit.score
+                image_similarity=hit.score,
+                rerank_score=(hit.payload.get('rerank_score') 
+                              if text_query and 'rerank_score' in hit.payload else None)
             )for hit in qdrant_results
         ]
         
