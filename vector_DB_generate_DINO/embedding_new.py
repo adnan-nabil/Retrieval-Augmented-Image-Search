@@ -1,32 +1,41 @@
+import io
+import json
+import asyncio
+import logging
+import aiohttp
+import hashlib
+import torch
+import numpy as np
+import mysql.connector
+from PIL import Image, UnidentifiedImageError
+from typing import List, Dict, Optional
 from transformers import AutoImageProcessor, AutoModel
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-import torch
-import mysql.connector
-from PIL import Image, UnidentifiedImageError
-import io
-import hashlib
-from typing import List, Dict, Optional
-import logging
-import numpy as np
-import json
-import asyncio  
-import aiohttp  
+
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ProductEmbeddingPipeline:
-    def __init__(self, mysql_config: Dict, qdrant_url: str, collection_name: str):
+    def __init__(self, tenant_info: Dict):
         """
         Initialize the pipeline
         """
-        self.mysql_config = mysql_config
-        self.collection_name = collection_name
-        self.qdrant_client = QdrantClient(url=qdrant_url)
+        self.mysql_config = {
+            'host': tenant_info['db_host'],
+            'port': tenant_info['db_port'],
+            'user': tenant_info['db_user'],
+            'password': tenant_info['db_pass'],
+            'database': tenant_info['db_name']
+        }
+        self.collection_name = tenant_info['qdrant_collection']
+        self.qdrant_client = QdrantClient(url=tenant_info["qdrant_url"])
+        self.tenant_user_id = tenant_info.get('tenant_user_id')
         
-        logger.info("Loading DINOv2 model...")
+        
+        logger.info("Loading DINOv2 base model...")
         self.processor = AutoImageProcessor.from_pretrained('facebook/dinov2-base')
         self.model = AutoModel.from_pretrained('facebook/dinov2-base')
         self.model.eval()
@@ -51,21 +60,25 @@ class ProductEmbeddingPipeline:
         """
         Fetch products from MySQL database
         """
-        # This remains synchronous as mysql.connector is a blocking library.
-        # For full async, one would use a library like aiomysql.
         conn = mysql.connector.connect(**self.mysql_config)
         cursor = conn.cursor(dictionary=True)
-        
-        query = """
+        base_query = """
         SELECT 
             id, name, image_path, image_path1, 
             image_path2, image_path3, image_paths
         FROM products
-        WHERE user_id = 188
-        LIMIT %s OFFSET %s
         """
+        params = []
         
-        cursor.execute(query, (batch_size, offset))
+        if self.tenant_user_id:
+            base_query += " WHERE user_id = %s"
+            params.append(self.tenant_user_id)
+        
+        base_query += " LIMIT %s OFFSET %s"
+        params.extend([batch_size, offset])
+            
+        
+        cursor.execute(base_query, tuple(params))
         products = cursor.fetchall()
         
         cursor.close()
@@ -285,22 +298,27 @@ class ProductEmbeddingPipeline:
 
 if __name__ == "__main__":
     
-    mysql_config = {
-        'host': 'localhost',
-        'port': 3307,
-        'user': 'root',
-        'password': '',
-        'database': 'gadget_bodda'
-    }
+    # Manually copy paste from tenants.json
+    TENANT_API_KEY_TO_INDEX = "si_mlteam_e196c7541a5097bf65ac053b6d8159c1343c8486f40dd0d590584b78326caeb4"
     
+    try:
+        with open('tenants.json', 'r') as f:
+            TENANT_CONFIGS = json.load(f)
+    except Exception as e:
+        logger.error(f"Could not load tenants.json: {e}")
+        exit()
+    
+    tenant_info = TENANT_CONFIGS.get(TENANT_API_KEY_TO_INDEX)
+    
+    if not tenant_info:
+        logger.error(f"Could not find tenant with API key: {TENANT_API_KEY_TO_INDEX}")
+        exit()
+        
+    logger.info(f"Starting pipeline for shop: {tenant_info['shop_name']}...")
     
     pipeline = ProductEmbeddingPipeline(
-        mysql_config=mysql_config,
-        qdrant_url="http://localhost:6333",
-        collection_name="gadget_bodda"    
+        tenant_info=tenant_info 
     )
     
-    
-    logger.info("Starting pipeline...")
     asyncio.run(pipeline.run_pipeline(batch_size=200))
-    logger.info("Pipeline finished.")
+    logger.info(f"Pipeline finished for: {tenant_info['shop_name']}.")

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from config import settings
-from routers import Search
+from searchAPI.app.routers import Search_router
 
 # --- Application Initialization ---
 
@@ -12,8 +12,8 @@ app = FastAPI(
 
 
 # --- Include Routers ---
-app.include_router(Search.router)
-# app.include_router(upsert_delete.router)
+app.include_router(Search_router.router)
+
 
 
 # --- Health Check Endpoint ---

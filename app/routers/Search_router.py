@@ -1,21 +1,52 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from PIL import Image
-from typing import Optional
 import io
+import json
+import logging
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Security
+from PIL import Image
+from typing import Optional, Dict
 from utils.pydantic_schemas import SearchResponse, SearchResult
 from utils.dboperations import DBOperations
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/search",
+    prefix="/search_by_image",
     tags=["Visual Search"],
 )
+auth_scheme = HTTPBearer()
+
+try:
+    with open('tenants.json', 'r') as f:
+        TENANT_CONFIGS = json.load(f)
+except FileNotFoundError:
+    logger.critical("FATAL ERROR: tenants.json config file not found.")
+    TENANT_CONFIGS = {}
+except json.JSONDecodeError:
+    logger.critical("FATAL ERROR: tenants.json is not valid JSON.")
+    TENANT_CONFIGS = {}
+
+async def get_shop_info(
+    token: HTTPAuthorizationCredentials = Security(auth_scheme)
+) -> Dict:
+    """
+    Validates the API key (Bearer token) by checking the tenants.json file.
+    """
+    api_key = token.credentials
+    shop_info = TENANT_CONFIGS.get(api_key)
+    
+    if not shop_info:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+        
+    return shop_info
 
 
-@router.post("/image_search", response_model=SearchResponse, status_code=200)
 
+@router.post("/", response_model=SearchResponse, status_code=200)
 async def search_by_image_upload(
     file: UploadFile = File(..., description="Upload Image"),
-    text_query: Optional[str] = None 
+    text_query: Optional[str] = None,
+    shop_info: Dict = Depends(get_shop_info) 
 ):
     """
     Args:
@@ -36,7 +67,7 @@ async def search_by_image_upload(
     
     
     try:
-        retriever = DBOperations()
+        retriever = DBOperations(tenant_info=shop_info)
         qdrant_results = retriever.find_similar(image, text_query)
         
         # 3. Format the results using the Pydantic schema [SeachResult]
@@ -54,5 +85,5 @@ async def search_by_image_upload(
         return SearchResponse(results=results)
         
     except Exception as e:
-        print(f"Error processing visual search: {e}")
+        logger.error(f"Error processing visual search: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error during search: {e}")

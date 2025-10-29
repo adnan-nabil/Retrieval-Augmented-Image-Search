@@ -1,0 +1,14 @@
+{
+  "si_mlteam_e196c7541a5097bf65ac053b6d8159c1343c8486f40dd0d590584b78326caeb4": {
+    "shop_name": "gadget_bodda",
+    "qdrant_collection": "gadget_bodda",
+    "qdrant_url": "http://localhost:6333",
+    "db_host": "localhost",
+    "db_port": 3307,
+    "db_user": "root",
+    "db_pass": "",
+    "db_name": "gadget_bodda",
+    "tenant_user_id": 188
+  }
+}
+

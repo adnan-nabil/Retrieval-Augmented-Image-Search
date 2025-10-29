@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue
-from typing import List, Optional
+from typing import List, Optional, Dict
 from PIL import Image
 from config import settings
 from utils.pydantic_schemas import hash_product_id_and_index
@@ -12,12 +12,20 @@ from utils.ranking_encoder import reranker
 print("All models initialized and ready.")
 
 class DBOperations:
-    def __init__(self):
-        self.url = settings.QDRANT_URL
-        self.client = QdrantClient(url=self.url)
-        self.collection_name = settings.QDRANT_COLLECTION_NAME
+    def __init__(self, tenant_info: Dict):
+        self.tenant_info = tenant_info
+        self.tenant_user_id = tenant_info.get('tenant_user_id')
+        self.client = QdrantClient(url=tenant_info.get('qdrant_url'))
+        self.collection_name = tenant_info['qdrant_collection']
         self.vector_dimension = settings.VECTOR_DIMENSION
         self.k = 30 # how many similar points I want
+        self.mysql_config = {
+            'host': tenant_info['db_host'],
+            'port': tenant_info['db_port'],
+            'user': tenant_info['db_user'],
+            'password': tenant_info['db_pass'],
+            'database': tenant_info['db_name']
+        }
         
 
     def find_similar(self, image: Image.Image, text_query: Optional[str]) -> List[models.ScoredPoint]:
