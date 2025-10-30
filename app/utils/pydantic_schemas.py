@@ -15,27 +15,14 @@ def hash_product_id_and_index(product_id: str, image_index: str) -> int:
     # Modulo is used to ensure the ID fits within Qdrant's 63-bit integer limit
     return hash(unique_key) % (2**63 - 1)
 
-# --- REQUEST SCHEMAS (Data coming into the API) ---
 
 class BaseProductRequest(BaseModel):
     """Base class for any request involving a product and a specific image index."""
     product_id: str = Field(..., description="The unique identifier for the product.")
     query: Optional[str] = Field(..., description="Serial number of the image eg 1,2,3 or 4.")
 
-class UpsertProductRequest(BaseProductRequest):
-    """Schema for creating a new vector or updating an existing one."""
-    # The image data itself will be passed via FastAPI's UploadFile
-    pass
-
-class DeleteProductRequest(BaseProductRequest):
-    """Schema for deleting a specific image's vector from Qdrant."""
-    pass
-    
-class DeleteProductAllRequest(BaseModel):
-    """Schema for deleting ALL vectors associated with a product ID."""
-    product_id: str = Field(..., description="The unique product ID whose all images should be deleted.")
-
-# --- RESPONSE SCHEMAS (Data going out of the API) ---
+class ProductCreateRequest(BaseModel):
+    product_id: str = Field(..., description="The unique ID of the product.")
 
 class SearchResult(BaseModel):
     """Defines the structure of a single vector search result."""

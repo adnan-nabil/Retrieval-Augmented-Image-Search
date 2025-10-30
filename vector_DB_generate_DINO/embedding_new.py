@@ -223,7 +223,7 @@ class ProductEmbeddingPipeline:
             logger.info("No images successfully downloaded in this batch.")
             return []
 
-        # Synchronous
+    
         logger.info(f"Generating embeddings for {len(images_to_process)} images...")
         try:
             embeddings = self.generate_embeddings_batch(images_to_process)
