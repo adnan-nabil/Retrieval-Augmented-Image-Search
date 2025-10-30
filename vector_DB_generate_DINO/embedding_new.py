@@ -5,6 +5,7 @@ import logging
 import aiohttp
 import hashlib
 import torch
+from pathlib import Path
 import numpy as np
 import mysql.connector
 from PIL import Image, UnidentifiedImageError
@@ -301,8 +302,10 @@ if __name__ == "__main__":
     # Manually copy paste from tenants.json
     TENANT_API_KEY_TO_INDEX = "si_mlteam_e196c7541a5097bf65ac053b6d8159c1343c8486f40dd0d590584b78326caeb4"
     
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    TENANT_PATH = PROJECT_ROOT / "tenants.json"
     try:
-        with open('tenants.json', 'r') as f:
+        with open(TENANT_PATH, 'r') as f:
             TENANT_CONFIGS = json.load(f)
     except Exception as e:
         logger.error(f"Could not load tenants.json: {e}")

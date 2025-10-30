@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from config import settings
-from searchAPI.app.routers import Search_router
+from routers import Search_router
 
 # --- Application Initialization ---
 

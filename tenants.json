@@ -4,10 +4,10 @@
     "qdrant_collection": "gadget_bodda",
     "qdrant_url": "http://localhost:6333",
     "db_host": "localhost",
-    "db_port": 3307,
+    "db_port": 3306,
     "db_user": "root",
     "db_pass": "",
-    "db_name": "gadget_bodda",
+    "db_name": "outletexpense",
     "tenant_user_id": 188
   }
 }

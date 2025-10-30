@@ -1,8 +1,10 @@
 import io
+import sys
 import json
 import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Security
 from PIL import Image
+from pathlib import Path
 from typing import Optional, Dict
 from utils.pydantic_schemas import SearchResponse, SearchResult
 from utils.dboperations import DBOperations
@@ -15,12 +17,17 @@ router = APIRouter(
     tags=["Visual Search"],
 )
 auth_scheme = HTTPBearer()
+project_root = Path(__file__).resolve().parent.parent.parent
+tenant_file = project_root / 'tenants.json'
 
 try:
-    with open('tenants.json', 'r') as f:
+    with open(tenant_file, 'r') as f:
         TENANT_CONFIGS = json.load(f)
+        print(f"Tenant configurations loaded successfully.Len = {len(TENANT_CONFIGS)}")
 except FileNotFoundError:
     logger.critical("FATAL ERROR: tenants.json config file not found.")
+    print("___server is shutting down____")
+    sys.exit(1)
     TENANT_CONFIGS = {}
 except json.JSONDecodeError:
     logger.critical("FATAL ERROR: tenants.json is not valid JSON.")
