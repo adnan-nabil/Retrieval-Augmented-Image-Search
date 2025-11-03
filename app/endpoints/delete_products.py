@@ -24,7 +24,6 @@ async def delete_product(
     """
     
     try:
-        # 1. Initialize DBOperations with tenant info
         db = DBOperations(tenant_info=shop_info)
         
         # 2. Call delete method
