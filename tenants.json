@@ -7,7 +7,7 @@
     "db_port": 3306,
     "db_user": "root",
     "db_pass": "",
-    "db_name": "outletexpense",
+    "db_name": "outlet_expense",
     "tenant_user_id": 188
   }
 }
