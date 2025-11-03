@@ -21,7 +21,7 @@ class BaseProductRequest(BaseModel):
     product_id: str = Field(..., description="The unique identifier for the product.")
     query: Optional[str] = Field(..., description="Serial number of the image eg 1,2,3 or 4.")
 
-class AddProduct(BaseModel):
+class ProductID(BaseModel):
     product_id: str = Field(..., description="The unique ID of the product.")
 
 class SearchResult(BaseModel):
@@ -39,9 +39,7 @@ class SearchResponse(BaseModel):
 
 class StatusResponse(BaseModel):
     """Generic response for status updates (Create, Update, Delete)."""
-    status: str
-    message: str
+    status: Optional[str] = None
+    message: Optional[str] = None
     qdrant_point_id: Optional[int] = None
-
-class SearchRequest(BaseModel):
-    text_query: Optional[str] = None    
+    deleted_count: Optional[int] = None

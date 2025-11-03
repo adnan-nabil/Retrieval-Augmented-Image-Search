@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from PIL import Image
 from typing import Optional, Dict
-from utils.pydantic_schemas import SearchResponse, SearchResult, SearchRequest
+from utils.pydantic_schemas import SearchResponse, SearchResult
 from utils.dboperations import DBOperations
 from dependencies.auth import get_shop_info
 

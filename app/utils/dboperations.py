@@ -166,3 +166,38 @@ class DBOperations:
                     
         # Return a list of unique, non-empty URLs
         return list({url.strip() for url in all_urls if url and url.strip()})    
+    
+
+    def delete_product_vectors(self, product_id: str) -> int:
+        """
+        Deletes all vector points from Qdrant that match the given product_id.
+        
+        Args:
+            product_id: The ID of the product to delete.
+            
+        Returns:
+            The count of deleted points.
+        """
+        print(f"Attempting to delete points for product_id: {product_id} from {self.collection_name}")
+        
+        # 1. Create a filter to target the payload field
+        deletion_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="product_id",  # The field in your payload
+                    match=MatchValue(value=str(product_id)) # Ensure it's a string
+                )
+            ]
+        )
+        
+        # 2. Execute the delete operation
+        operation_info = self.client.delete_points(
+            collection_name=self.collection_name,
+            points_selector=deletion_filter,
+            wait=True  # Wait for the operation to complete
+        )
+        
+        deleted_count = operation_info.result.deleted
+        print(f"Delete operation status: {operation_info.status}. Deleted {deleted_count} points.")
+        
+        return deleted_count
