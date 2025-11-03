@@ -3,7 +3,7 @@ from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 from typing import List, Optional, Dict
 from PIL import Image, UnidentifiedImageError
 from config import settings
-from image_encoder import encoder
+from utils.image_encoder import encoder
 from utils.ranking_encoder import reranker
 import hashlib
 import aiohttp
