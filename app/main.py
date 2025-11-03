@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from config import settings
-from routers import Search_router, add_product_router
+from endpoints import Search_router, add_product_router
 
 # --- Application Initialization ---
 
