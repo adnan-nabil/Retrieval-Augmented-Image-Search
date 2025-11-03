@@ -5,17 +5,17 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict
 from utils.dboperations import DBOperations
 from dependencies.auth import get_shop_info
-from utils.pydantic_schemas import ProductCreateRequest 
+from utils.pydantic_schemas import AddProduct 
 
 logger = logging.getLogger(__name__)
 router = APIRouter(
-    prefix="/add_new_product",
-    tags=["New Product"],
+    prefix="/add_product",
+    tags=["Add Product"],
 )
 
 @router.post("/", status_code=201)
 async def create_product(
-    request: ProductCreateRequest,
+    request: AddProduct,
     shop_info: Dict = Depends(get_shop_info)
 ):
     """

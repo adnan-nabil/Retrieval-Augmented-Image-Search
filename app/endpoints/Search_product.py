@@ -1,9 +1,9 @@
 import io
 import logging
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from PIL import Image
 from typing import Optional, Dict
-from utils.pydantic_schemas import SearchResponse, SearchResult
+from utils.pydantic_schemas import SearchResponse, SearchResult, SearchRequest
 from utils.dboperations import DBOperations
 from dependencies.auth import get_shop_info
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/search_by_image",
-    tags=["Visual Search"],
+    tags=["Search"],
 )
 
 
@@ -19,7 +19,7 @@ router = APIRouter(
 @router.post("/", response_model=SearchResponse, status_code=200)
 async def search_by_image_upload(
     file: UploadFile = File(..., description="Upload Image"),
-    text_query: Optional[str] = None,
+    text_query: Optional[str] = Form(None, description="please provide brand name for accurate products"),  # Optional text field
     shop_info: Dict = Depends(get_shop_info) 
 ):
     """

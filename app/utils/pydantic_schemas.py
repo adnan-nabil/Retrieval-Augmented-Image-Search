@@ -21,7 +21,7 @@ class BaseProductRequest(BaseModel):
     product_id: str = Field(..., description="The unique identifier for the product.")
     query: Optional[str] = Field(..., description="Serial number of the image eg 1,2,3 or 4.")
 
-class ProductCreateRequest(BaseModel):
+class AddProduct(BaseModel):
     product_id: str = Field(..., description="The unique ID of the product.")
 
 class SearchResult(BaseModel):
@@ -42,3 +42,6 @@ class StatusResponse(BaseModel):
     status: str
     message: str
     qdrant_point_id: Optional[int] = None
+
+class SearchRequest(BaseModel):
+    text_query: Optional[str] = None    
