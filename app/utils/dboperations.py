@@ -228,7 +228,7 @@ class DBOperations:
         
         # 3. Check if the API call itself failed
         if operation_info.status != models.UpdateStatus.COMPLETED:
-            raise Exception(f"Failed to delete point {point_id}. Status: {operation_info.status}")
+            raise Exception(f"Failed to delete. Status: {operation_info.status}")
 
         print(f"Successfully processed delete request for point ID: {point_id}")
         return point_id
