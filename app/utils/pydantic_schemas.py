@@ -1,20 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-# --- QDRANT POINT IDENTIFICATION ---
-
-def hash_product_id_and_index(product_id: str, image_index: str) -> int:
-    """
-    Creates a consistent, unique, numerical ID for a vector point in Qdrant
-    based on the product ID and its image index.
-    This hash must be the same algorithm used in generate_embeddings.py.
-    """
-    # Combine product ID and index into a single string
-    unique_key = f"{product_id}_{image_index}"
-    # Use a large integer hash to avoid collisions (Python's hash() is consistent within a session)
-    # Modulo is used to ensure the ID fits within Qdrant's 63-bit integer limit
-    return hash(unique_key) % (2**63 - 1)
-
 
 class BaseProductRequest(BaseModel):
     """Base class for any request involving a product and a specific image index."""
