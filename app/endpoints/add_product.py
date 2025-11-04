@@ -45,38 +45,33 @@ async def create_product(
     async with aiohttp.ClientSession() as session:
         tasks = [db._download_image_async(session, url) for url in image_urls]
         downloaded_images = await asyncio.gather(*tasks)
-
-
-    successful_downloads = []
+    
+    image_data_list = []
     for img, url in zip(downloaded_images, image_urls):
         if img:
-            successful_downloads.append((img, url))
+            # Build the dictionary for batch upsert
+            image_data_list.append({
+                "product_id": request.product_id,
+                "product_name": product_name,
+                "image_url": url,
+                "image": img  # The actual PIL.Image object
+            })
         else:
             logger.warning(f"Failed to download or verify image: {url}")
             
-    if not successful_downloads:
+    if not image_data_list:
         raise HTTPException(
             status_code=400, 
             detail="No valid images could be processed from the provided URLs."
         )
 
-    
-    upserted_ids = []
     try:
-        for image, url in successful_downloads:
-            point_id = db.upsert_product_vector(
-                product_id=request.product_id,
-                product_name=product_name,
-                image_url=url,
-                image=image
-            )
-            upserted_ids.append(point_id)
-            
+        upserted_ids = db.upsert_image_batch(image_data_list)
+
         return {
             "status": "success",
             "message": f"Successfully processed product {request.product_id}",
-            "total_images_processed": len(upserted_ids),
-            "point_ids": upserted_ids
+            "total_images_processed": len(upserted_ids)
         }
         
     except Exception as e:

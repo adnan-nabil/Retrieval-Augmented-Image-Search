@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from PIL import Image, UnidentifiedImageError
 from config import settings
 from utils.image_encoder import encoder
@@ -57,40 +57,35 @@ class DBOperations:
         """Generate unique ID for each image embedding"""
         combined = f"{product_id}_{img_url}"
         return hashlib.md5(combined.encode()).hexdigest()
+
+    def upsert_image_batch(self, image_data_list: List[Dict[str, Any]]) -> List[str]:
+        if not image_data_list:
+            return []
+            
     
-    def upsert_product_vector(self, product_id: str, product_name: str, image_url: str, image: Image.Image) -> str:
-        """
-        Creates/updates a vector, MATCHING the pipeline's logic.
-        """
-        # 1. Generate unique ID (MATCHES PIPELINE)
-        point_id = self.generate_unique_id(product_id, image_url)
-        
-        vector = encoder.encode_image(image)
-        
-        payload = {
-            "product_id": str(product_id), # Match pipeline's str() cast
-            "product_name": product_name.lower().strip(), # Match pipeline's formatting
-            "image_url": image_url 
-        }
-        
-        # 4. Create PointStruct
-        points = [
-            models.PointStruct(
-                id=point_id, 
+        images_to_encode = [item['image'] for item in image_data_list]
+        vectors = encoder.encode_image_batch(images_to_encode) 
+
+        points_to_upsert = []
+        for item, vector in zip(image_data_list, vectors):
+            point = models.PointStruct(
+                id=self.generate_unique_id(item['product_id'], item['image_url']),
                 vector=vector,
-                payload=payload
+                payload={
+                    'product_id': item['product_id'],
+                    'product_name': item['product_name'].lower().strip(),
+                    'image_url': item['image_url']
+                    }
             )
-        ]
-        
-        # 5. Upsert to Qdrant
+            points_to_upsert.append(point)
+
         self.client.upsert(
             collection_name=self.collection_name,
             wait=True,
-            points=points
+            points=points_to_upsert
         )
         
-        print(f"Upsert successful for ID {point_id}.")
-        return point_id
+        return [point.id for point in points_to_upsert]
 
     async def _download_image_async(self, session: aiohttp.ClientSession, url: str) -> Optional[Image.Image]:
         """
@@ -167,7 +162,6 @@ class DBOperations:
         # Return a list of unique, non-empty URLs
         return list({url.strip() for url in all_urls if url and url.strip()})    
     
-
     def delete_product_vectors(self, product_id: str) -> int:
         """
         Deletes all vector points from Qdrant that match the given product_id.
@@ -200,5 +194,4 @@ class DBOperations:
         print(f"Delete operation status: {operation_info.status}. Deleted {deleted_count} points.")
         
         return deleted_count
-
-
+    

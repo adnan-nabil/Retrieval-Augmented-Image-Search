@@ -65,6 +65,43 @@ class DinoEmbeddingModel:
         normalized_embedding = embedding / norm
         return normalized_embedding.tolist()
         
+    def encode_image_batch(self, images: List[Image.Image]) -> List[List[float]]:
+        """
+        Args:
+            images (List[Image.Image]): A list of input images to encode.
+
+        Returns:
+            List[List[float]]: A list of normalized vector embeddings.
+        """
+        if not self.model or not self.processor:
+            raise RuntimeError("Model is not loaded. Initialization might have failed.")
+            
+        if not images:
+            return []
+
+        rgb_images = [img.convert("RGB") for img in images]
+        
+        with torch.no_grad():
+            inputs = self.processor(
+                images=rgb_images, 
+                return_tensors="pt", 
+                padding=True, 
+                truncation=True
+            )
+            
+            # Move inputs to the correct device
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            outputs = self.model(**inputs)
+            
+            embeddings = outputs.last_hidden_state[:, 0].cpu().numpy()
+        
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1e-10
+        normalized_embeddings = embeddings / norms
+        
+        return normalized_embeddings.tolist()
+
+
 
 
 encoder = DinoEmbeddingModel()

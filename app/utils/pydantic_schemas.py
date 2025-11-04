@@ -21,8 +21,13 @@ class BaseProductRequest(BaseModel):
     product_id: str = Field(..., description="The unique identifier for the product.")
     query: Optional[str] = Field(..., description="Serial number of the image eg 1,2,3 or 4.")
 
+
+
 class ProductID(BaseModel):
     product_id: str = Field(..., description="The unique ID of the product.")
+
+
+
 
 class SearchResult(BaseModel):
     """Defines the structure of a single vector search result."""
@@ -37,9 +42,19 @@ class SearchResponse(BaseModel):
     results: List[SearchResult] = Field(..., description="A list of similar products found.")
     #query_type: str = Field(..., description="The type of query executed (e.g., 'image_upload').")
 
+
+
+
 class StatusResponse(BaseModel):
     """Generic response for status updates (Create, Update, Delete)."""
     status: Optional[str] = None
     message: Optional[str] = None
     qdrant_point_id: Optional[int] = None
     deleted_count: Optional[int] = None
+    added_count: Optional[int] = None    
+
+
+
+class AddImageLinksRequest(BaseModel):
+    product_id: str
+    image_urls: List[str]    
