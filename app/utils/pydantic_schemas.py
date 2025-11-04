@@ -41,6 +41,6 @@ class StatusResponse(BaseModel):
 
 
 
-class AddImageLinksRequest(BaseModel):
+class ImageLinksRequest(BaseModel):
     product_id: str
     image_urls: List[str]    

@@ -195,3 +195,41 @@ class DBOperations:
         
         return deleted_count
     
+
+    def delete_image_vector(self, product_id: str, image_url: str) -> str:
+        """
+        Deletes a SINGLE vector point from Qdrant by its specific ID.
+        
+        This is the simplest, most direct method. It calculates the 
+        point's unique ID (the same way it was created) and 
+        deletes it directly without needing to search.
+
+        Args:
+            product_id: The ID of the product.
+            image_url: The specific URL of the image to delete.
+
+        Returns:
+            The ID of the point that was targeted for deletion.
+        """
+    
+        point_id = self.generate_unique_id(product_id, image_url)
+        
+        print(f"Attempting to delete image from ID: {product_id}")
+
+        # 2. Execute the delete operation using the exact ID.
+        # Deleting by a list of known IDs is the fastest method.
+        operation_info = self.client.delete_points(
+            collection_name=self.collection_name,
+            points_selector=models.PointIdsList(
+                points=[point_id],  # Pass the single ID in a list
+            ),
+            wait=True  # Wait for the operation to complete
+        )
+        
+        # 3. Check if the API call itself failed
+        if operation_info.status != models.UpdateStatus.COMPLETED:
+            raise Exception(f"Failed to delete point {point_id}. Status: {operation_info.status}")
+
+        print(f"Successfully processed delete request for point ID: {point_id}")
+        return point_id
+

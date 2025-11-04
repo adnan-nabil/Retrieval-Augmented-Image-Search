@@ -6,7 +6,7 @@ from typing import Dict, List
 
 from utils.dboperations import DBOperations
 from dependencies.auth import get_shop_info
-from utils.pydantic_schemas import AddImageLinksRequest, StatusResponse
+from utils.pydantic_schemas import ImageLinksRequest, StatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ router = APIRouter(
 
 @router.post("/", response_model=StatusResponse, status_code=201)
 async def add_image_links_to_product(
-    request: AddImageLinksRequest, 
+    request: ImageLinksRequest, 
     shop_info: Dict = Depends(get_shop_info)
 ):
     """
