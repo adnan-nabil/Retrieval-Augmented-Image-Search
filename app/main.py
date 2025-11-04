@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from config import settings
-from endpoints import Search_product, add_product
+from endpoints import Search_product, add_product, delete_products
 
 # --- Application Initialization ---
 
@@ -14,6 +14,7 @@ app = FastAPI(
 # --- Include Routers ---
 app.include_router(Search_product.router)
 app.include_router(add_product.router)
+app.include_router(delete_products.router)
 
 
 # --- Health Check Endpoint ---

@@ -180,7 +180,6 @@ class DBOperations:
         """
         print(f"Attempting to delete points for product_id: {product_id} from {self.collection_name}")
         
-        # 1. Create a filter to target the payload field
         deletion_filter = Filter(
             must=[
                 FieldCondition(
@@ -201,3 +200,5 @@ class DBOperations:
         print(f"Delete operation status: {operation_info.status}. Deleted {deleted_count} points.")
         
         return deleted_count
+
+

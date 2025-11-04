@@ -26,7 +26,6 @@ async def delete_product(
     try:
         db = DBOperations(tenant_info=shop_info)
         
-        # 2. Call delete method
         deleted_count = db.delete_product_vectors(
             product_id=request.product_id
         )
