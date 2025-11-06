@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 # Create a new router for delete operations
 router = APIRouter(
-    prefix="/delete_products",
-    tags=["delete Product"],
+    prefix="/delete_product",
+    tags=["Delete Product"],
 )
 
 @router.delete("/", response_model=StatusResponse, status_code=200)

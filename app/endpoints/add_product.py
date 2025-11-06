@@ -10,7 +10,7 @@ from utils.pydantic_schemas import ProductID
 logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/add_product",
-    tags=["Add Product"],
+    tags=["Add New Product"],
 )
 
 @router.post("/", status_code=201)

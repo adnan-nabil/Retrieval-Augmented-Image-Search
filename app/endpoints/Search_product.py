@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/search_by_image",
-    tags=["Search"],
+    tags=["Image Search"],
 )
 
 

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 # Create a new router
 router = APIRouter(
     prefix="/delete_image",
-    tags=["Delete Image"] 
+    tags=["Delete Images to Product"] 
 )
 
 @router.delete("/", response_model=StatusResponse, status_code=200)
